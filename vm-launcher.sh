@@ -22,13 +22,21 @@ if [ -z "$choice" ]; then
   echo "  2) Debian 12 (Bookworm)"
   echo "=================================="
 
-  if [ -t 0 ]; then
-    read -p "Select an option [1-2]: " choice
+  # When run as `curl | bash`, stdin (fd 0) is the piped script itself,
+  # not the keyboard, so a normal `read` can't get input here. Reading
+  # from /dev/tty instead talks to the actual terminal directly, which
+  # is what lets a single curl|bash command still show an interactive
+  # prompt. We actually try to open it (rather than just checking the
+  # path exists) since some environments have no controlling terminal
+  # at all, in which case opening /dev/tty fails outright.
+  if { exec 3<>/dev/tty; } 2>/dev/null; then
+    read -p "Select an option [1-2]: " choice <&3
+    exec 3<&-
   else
-    echo "No terminal input available (likely running via curl | bash)."
+    echo "No terminal available to read input from."
     echo "Re-run with an argument instead, e.g.:"
-    echo "  curl -sL <raw-url> | bash -s ubuntu"
-    echo "  curl -sL <raw-url> | bash -s debian"
+    echo "  bash vm-launcher.sh ubuntu"
+    echo "  bash vm-launcher.sh debian"
     exit 1
   fi
 fi
