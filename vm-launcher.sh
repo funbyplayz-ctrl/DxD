@@ -3,13 +3,35 @@ set -e
 
 VM_DIR="/.qemu-vm"
 
-echo "=================================="
-echo "  QEMU VM Launcher"
-echo "=================================="
-echo "  1) Ubuntu 22.04 (Jammy)"
-echo "  2) Debian 12 (Bookworm)"
-echo "=================================="
-read -p "Select an option [1-2]: " choice
+# Allow the choice to be passed as an argument (needed when run via
+# `curl | bash`, since stdin is occupied by the piped script and an
+# interactive `read` can't get input from the terminal in that case).
+arg="$1"
+choice=""
+
+case "$arg" in
+  ubuntu|Ubuntu|1) choice="1" ;;
+  debian|Debian|2) choice="2" ;;
+esac
+
+if [ -z "$choice" ]; then
+  echo "=================================="
+  echo "  QEMU VM Launcher"
+  echo "=================================="
+  echo "  1) Ubuntu 22.04 (Jammy)"
+  echo "  2) Debian 12 (Bookworm)"
+  echo "=================================="
+
+  if [ -t 0 ]; then
+    read -p "Select an option [1-2]: " choice
+  else
+    echo "No terminal input available (likely running via curl | bash)."
+    echo "Re-run with an argument instead, e.g.:"
+    echo "  curl -sL <raw-url> | bash -s ubuntu"
+    echo "  curl -sL <raw-url> | bash -s debian"
+    exit 1
+  fi
+fi
 
 case "$choice" in
   1)
